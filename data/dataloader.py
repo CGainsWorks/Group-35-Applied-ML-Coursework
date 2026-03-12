@@ -2,7 +2,7 @@
 # EEEM068 Action Recognition using  ViT
 # Author: Prasanna Lamgade
 # Group members: Ben Davison, Chris Gainullin, Saba Ali, Youssef Abdelrahim
-# SC: python -m data.dataloader "./HMDB_simp"
+# SC: python -models data.dataloader "./HMDB_simp"
 
 import numpy as np
 from torch.utils.data import DataLoader, Subset

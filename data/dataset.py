@@ -2,7 +2,7 @@
 # EEEM068 Action Recognition using  ViT
 # Author: Prasanna Lamgade
 # Group members: Ben Davison, Chris Gainullin, Saba Ali, Youssef Abdelrahim
-# SC: python -m data.dataset "./HMDB_simp"
+# SC: python -models data.dataset "./HMDB_simp"
 
 import os
 from pathlib import Path
