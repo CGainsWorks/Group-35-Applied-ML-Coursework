@@ -18,12 +18,12 @@ def load_timesformer(num_classes: int, checkpoint: str) -> TimesformerForVideoCl
 def count_parameters(model) -> dict:
     total = 0
     for p in model.parameters():
-        total =+ p.numel() # number of elements
+        total += p.numel() # number of elements
 
     trainable = 0
     for p in model.parameters():
         if p.requires_grad: # parameter will be updated during training
-            trainable =+ p.numel()
+            trainable += p.numel()
     return {"total": total, "trainable": trainable}
 
 # Sanity check
