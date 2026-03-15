@@ -102,6 +102,7 @@ def run_epoch(model, loader, optimizer, scheduler, grad_clip, device,
         model.eval()
     total_loss, correct, total = 0.0, 0, 0
     all_preds, all_labels = [], []
+    num_batches = 0
 
     if train:
         context = torch.enable_grad()  # track gradient
@@ -110,6 +111,7 @@ def run_epoch(model, loader, optimizer, scheduler, grad_clip, device,
 
     with context:
         for frames, labels in tqdm.tqdm(loader):
+            num_batches += 1
             frames = frames.to(device)
             labels = labels.to(device)
 
@@ -141,7 +143,8 @@ def run_epoch(model, loader, optimizer, scheduler, grad_clip, device,
 
     result = {
         "loss": total_loss / total,
-        "accuracy": correct / total
+        "accuracy": correct / total,
+        "num_batches": num_batches,
     }
     if return_predictions:
         result["predictions"] = torch.cat(all_preds).numpy()
@@ -155,6 +158,19 @@ def _extract_class_names(loader):
         dataset_obj = dataset_obj.dataset
     if hasattr(dataset_obj, "classes"):
         return list(dataset_obj.classes)
+    return None
+
+
+def _estimate_batch_flops(model, frames, labels, train=True):
+    # Hugging Face models expose floating_point_ops for a fast FLOPs estimate.
+    if hasattr(model, "floating_point_ops"):
+        try:
+            fwd_flops = float(model.floating_point_ops({"pixel_values": frames}))
+            if fwd_flops > 0:
+                # Training is roughly forward + backward + gradient update math.
+                return fwd_flops * (3.0 if train else 1.0)
+        except Exception:
+            pass
     return None
 
 
@@ -182,6 +198,30 @@ def train(model, train_loader, val_loader, cfg, device, output_dir, model_arch):
     stopper = EarlyStopping(patience=cfg["early_stop_patience"])
     history = defaultdict(list)
     phase = 1
+
+    train_batch_flops = None
+    val_batch_flops = None
+    try:
+        train_frames, train_labels = next(iter(train_loader))
+        train_batch_flops = _estimate_batch_flops(
+            model,
+            train_frames.to(device),
+            train_labels.to(device),
+            train=True,
+        )
+    except StopIteration:
+        raise ValueError("train_loader is empty")
+
+    try:
+        val_frames, val_labels = next(iter(val_loader))
+        val_batch_flops = _estimate_batch_flops(
+            model,
+            val_frames.to(device),
+            val_labels.to(device),
+            train=False,
+        )
+    except StopIteration:
+        raise ValueError("val_loader is empty")
 
     for epoch in range(1, cfg["num_epochs"] + 1):
         # Switch to phase 2 after warmup
@@ -224,10 +264,25 @@ def train(model, train_loader, val_loader, cfg, device, output_dir, model_arch):
         history["val_recall_macro"].append(val_metrics["recall_macro"])
         history["val_f1_macro"].append(val_metrics["f1_macro"])
         history["val_f1_weighted"].append(val_metrics["f1_weighted"])
+        train_epoch_flops = None if train_batch_flops is None else train_batch_flops * train_stats["num_batches"]
+        val_epoch_flops = None if val_batch_flops is None else val_batch_flops * val_stats["num_batches"]
+        total_epoch_flops = None if (train_epoch_flops is None or val_epoch_flops is None) else (train_epoch_flops + val_epoch_flops)
+        history["train_epoch_flops"].append(float("nan") if train_epoch_flops is None else float(train_epoch_flops))
+        history["val_epoch_flops"].append(float("nan") if val_epoch_flops is None else float(val_epoch_flops))
+        history["total_epoch_flops"].append(float("nan") if total_epoch_flops is None else float(total_epoch_flops))
 
         print(f"Train Loss: {train_stats['loss']:.4f} Acc: {train_stats['accuracy']:.4f}")
         print(f"Val Loss: {val_stats['loss']:.4f} Acc: {val_stats['accuracy']:.4f}")
         print(f"Val Metrics: {format_metrics_summary(val_metrics)}")
+        if total_epoch_flops is None:
+            print("Epoch FLOPs (estimate): unavailable")
+        else:
+            print(
+                "Epoch FLOPs (estimate): "
+                f"train={train_epoch_flops / 1e9:.2f} GFLOPs | "
+                f"val={val_epoch_flops / 1e9:.2f} GFLOPs | "
+                f"total={total_epoch_flops / 1e9:.2f} GFLOPs"
+            )
 
         if stopper.step(val_stats["accuracy"], model):  # called every epoch
             print(f"\nEarly stopping triggered at epoch {epoch}.")
