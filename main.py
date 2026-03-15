@@ -8,21 +8,12 @@ import os
 import argparse
 import torch
 
-from data.dataloader import build_dataloaders
-from data.dataset import HMDBDataset
-from training.train import train
-from utils import seed_everything
-
-
-def load_model(model_name, num_classes, checkpoint):
-    if model_name == "timesformer":
-        from model.timesformer import load_timesformer
-        return load_timesformer(num_classes=num_classes, checkpoint=checkpoint)
-    # elif model_name == "videomae":
-    #     from model.videomae import load_videomae
-    #     return load_videomae(num_classes=num_classes, checkpoint=checkpoint)
-    else:
-        raise ValueError(f"Unknown model: {model_name}")
+from src.data.dataloader import build_dataloaders
+from src.data.dataset import HMDBDataset
+from src.training.train import train
+from src.utils import seed_everything, count_parameters
+from src.model.timesformer import load_timesformer
+from src.model.videomae import load_videomae
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -52,7 +43,7 @@ def main():
 
     CHECKPOINTS = {
         "timesformer": "facebook/timesformer-base-finetuned-k600",
-        # "videomae":  # Ben to fill in
+        "videomae":  "MCG-NJU/videomae-base-finetuned-kinetics"
     }
 
     DATA_DIR = "./HMDB_simp"
@@ -66,11 +57,28 @@ def main():
 
     seed_everything(CFG["seed"])
 
+    # Data setup
     train_loader, val_loader, test_loader = build_dataloaders(DATA_DIR, CFG)
     ds = HMDBDataset(root=DATA_DIR, num_frames=CFG["num_frames"])
     class_names = ds.classes
 
-    model = load_model(args.model, num_classes=25, checkpoint=CHECKPOINTS[args.model])
+    # Model setup
+    if args.model == "timesformer":
+        model = load_timesformer(num_classes=25, checkpoint=CHECKPOINTS[args.model])
+    elif args.model == "videomae":
+        model = load_videomae(num_classes=25, checkpoint=CHECKPOINTS[args.model])
+        # VideoMAE positional embeddings require clip/token layout to match pretrained config.
+        CFG["num_frames"] = int(model.config.num_frames)
+        image_size = model.config.image_size
+        CFG["resolution"] = int(image_size[0] if isinstance(image_size, (tuple,
+                                                                         list)) else image_size)
+    else:
+        raise ValueError(f"Invalid model: {args.model}")
+
+    params = count_parameters(model)
+    print(f"\nParameters:")
+    print(f"Total: {params['total']:,}")
+    print(f"Trainable : {params['trainable']:,}")
 
     if args.eval_only:
         if not os.path.exists(CKPT_PATH):
@@ -80,8 +88,12 @@ def main():
     else:
         model, history = train(
             model, train_loader, val_loader,
-            cfg=CFG, device=DEVICE, output_dir=OUTPUT_DIR
+            cfg=CFG, device=DEVICE, output_dir=OUTPUT_DIR, model_arch=args.model
         )
+
+        print(f"\nTraining history:")
+        for k, v in history.items():
+            print(f"{k}: {[round(x, 4) for x in v]}")
 
 if __name__ == "__main__":
     main()
