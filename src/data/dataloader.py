@@ -5,10 +5,11 @@
 # SC: python -models data.dataloader "./HMDB_simp"
 
 import numpy as np
+import torch
 from torch.utils.data import DataLoader, Subset
 from sklearn.model_selection import StratifiedShuffleSplit
 
-from data.dataset import HMDBDataset
+from src.data.dataset import HMDBDataset
 import torchvision.transforms as T
 
 def get_transforms(resolution=224):
@@ -46,6 +47,7 @@ def build_splits(dataset, train_ratio=0.70, val_ratio=0.15, seed=42):
     return train_idx.tolist(), val_idx.tolist(), test_idx.tolist()
 
 def build_dataloaders(root, cfg):
+    use_pin_memory = torch.cuda.is_available()
     dataset = HMDBDataset(
         root=root,
         num_frames=cfg["num_frames"],
@@ -70,21 +72,21 @@ def build_dataloaders(root, cfg):
         batch_size=cfg["batch_size"], # calls `__getitem__` n times and stacks the results into `(4, 8, 3, 224, 224)`
         shuffle=True, # Randomises the order of samples each epoch. Train only
         num_workers=cfg["num_workers"], # how many parallel processes to use for loading
-        pin_memory=True # pins loaded tensors to CPU memory for faster transfer to GPU
+        pin_memory=use_pin_memory # pins loaded tensors for faster transfer to GPU
     )
     val_loader = DataLoader(
         val_subset,
         batch_size=cfg["batch_size"],
         shuffle=False,
         num_workers=cfg["num_workers"],
-        pin_memory=True
+        pin_memory=use_pin_memory
     )
     test_loader = DataLoader(
         test_subset,
         batch_size=cfg["batch_size"],
         shuffle=False,
         num_workers=cfg["num_workers"],
-        pin_memory=True
+        pin_memory=use_pin_memory
     )
 
     return train_loader, val_loader, test_loader
