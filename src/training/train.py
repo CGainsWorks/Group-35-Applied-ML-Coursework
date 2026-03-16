@@ -100,7 +100,7 @@ def run_epoch(model, loader, optimizer, scheduler, grad_clip, device,
         model.train()
     else:
         model.eval()
-    total_loss, correct, total = 0.0, 0, 0
+    total_loss, correct, total, top5_correct_total = 0.0, 0, 0, 0
     all_preds, all_labels = [], []
     num_batches = 0
 
@@ -132,8 +132,13 @@ def run_epoch(model, loader, optimizer, scheduler, grad_clip, device,
                     scheduler.step()
 
             predictions = out.logits.argmax(-1)
+            # Top-1 accuracy
             correct_mask = (predictions == labels)
             correct += correct_mask.sum().item()
+            # Top-5 accuracy
+            top5_preds = out.logits.topk(5, dim=1).indices
+            top5_correct = top5_preds.eq(labels.unsqueeze(1)).any(dim=1)
+            top5_correct_total += top5_correct.sum().item()
             total_loss += loss.item() * batch_size
             if return_predictions:
                 all_preds.append(predictions.detach().cpu())
@@ -142,10 +147,11 @@ def run_epoch(model, loader, optimizer, scheduler, grad_clip, device,
             total += batch_size
 
     result = {
-        "loss": total_loss / total,
-        "accuracy": correct / total,
-        "num_batches": num_batches,
-    }
+    "loss": total_loss / total,
+    "accuracy": correct / total,
+    "top5_accuracy": top5_correct_total / total,
+    "num_batches": num_batches,
+}
     if return_predictions:
         result["predictions"] = torch.cat(all_preds).numpy()
         result["labels"] = torch.cat(all_labels).numpy()
@@ -257,8 +263,10 @@ def train(model, train_loader, val_loader, cfg, device, output_dir, model_arch):
 
         history["train_loss"].append(train_stats["loss"])
         history["train_acc"].append(train_stats["accuracy"])
+        history["train_top5_acc"].append(train_stats["top5_accuracy"])
         history["val_loss"].append(val_stats["loss"])
         history["val_acc"].append(val_stats["accuracy"])
+        history["train_top5_acc"].append(train_stats["top5_accuracy"])
         history["val_balanced_acc"].append(val_metrics["balanced_accuracy"])
         history["val_precision_macro"].append(val_metrics["precision_macro"])
         history["val_recall_macro"].append(val_metrics["recall_macro"])
@@ -271,8 +279,16 @@ def train(model, train_loader, val_loader, cfg, device, output_dir, model_arch):
         history["val_epoch_flops"].append(float("nan") if val_epoch_flops is None else float(val_epoch_flops))
         history["total_epoch_flops"].append(float("nan") if total_epoch_flops is None else float(total_epoch_flops))
 
-        print(f"Train Loss: {train_stats['loss']:.4f} Acc: {train_stats['accuracy']:.4f}")
-        print(f"Val Loss: {val_stats['loss']:.4f} Acc: {val_stats['accuracy']:.4f}")
+        print(
+            f"Train Loss: {train_stats['loss']:.4f} "
+            f"Top1: {train_stats['accuracy']:.4f} "
+            f"Top5: {train_stats['top5_accuracy']:.4f}"
+            )
+        print(
+            f"Val Loss: {val_stats['loss']:.4f} "
+            f"Top1: {val_stats['accuracy']:.4f} "
+            f"Top5: {val_stats['top5_accuracy']:.4f}"
+            )
         print(f"Val Metrics: {format_metrics_summary(val_metrics)}")
         if total_epoch_flops is None:
             print("Epoch FLOPs (estimate): unavailable")

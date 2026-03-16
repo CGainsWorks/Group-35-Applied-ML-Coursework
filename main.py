@@ -14,6 +14,7 @@ from src.training.train import train
 from src.utils import seed_everything, count_parameters
 from src.model.timesformer import load_timesformer
 from src.model.videomae import load_videomae
+from src.eval.plots import plot_training
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -90,6 +91,7 @@ def main():
             model, train_loader, val_loader,
             cfg=CFG, device=DEVICE, output_dir=OUTPUT_DIR, model_arch=args.model
         )
+        plot_training(history, OUTPUT_DIR)
 
         print(f"\nTraining history:")
         for k, v in history.items():
