@@ -58,11 +58,6 @@ def main():
 
     seed_everything(CFG["seed"])
 
-    # Data setup
-    train_loader, val_loader, test_loader = build_dataloaders(DATA_DIR, CFG)
-    ds = HMDBDataset(root=DATA_DIR, num_frames=CFG["num_frames"])
-    class_names = ds.classes
-
     # Model setup
     if args.model == "timesformer":
         model = load_timesformer(num_classes=25, checkpoint=CHECKPOINTS[args.model])
@@ -75,6 +70,11 @@ def main():
                                                                          list)) else image_size)
     else:
         raise ValueError(f"Invalid model: {args.model}")
+    
+    # Data setup
+    train_loader, val_loader, test_loader = build_dataloaders(DATA_DIR, CFG)
+    ds = HMDBDataset(root=DATA_DIR, num_frames=CFG["num_frames"])
+    class_names = ds.classes
 
     params = count_parameters(model)
     print(f"\nParameters:")
@@ -91,7 +91,7 @@ def main():
             model, train_loader, val_loader,
             cfg=CFG, device=DEVICE, output_dir=OUTPUT_DIR, model_arch=args.model
         )
-        plot_training(history, OUTPUT_DIR)
+        plot_training(history, OUTPUT_DIR, args.model)
 
         print(f"\nTraining history:")
         for k, v in history.items():

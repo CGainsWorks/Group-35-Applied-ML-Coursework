@@ -16,7 +16,7 @@ plt.ylabel("True Label")
 
 # Save figure
 os.makedirs("outputs", exist_ok=True)
-plt.savefig("outputs/confusion_matrix_heatmap.png")
+plt.savefig("outputs/timesformer_confusion_matrix_heatmap.png")
 plt.close()
 
 print("Confusion matrix heatmap saved to outputs/")

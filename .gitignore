@@ -3,3 +3,5 @@ __pycache__/
 .idea/
 HMDB_simp/
 .venv/
+*.pt
+*.safetensors

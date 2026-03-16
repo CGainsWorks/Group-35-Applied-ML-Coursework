@@ -314,6 +314,7 @@ def train(model, train_loader, val_loader, cfg, device, output_dir, model_arch):
         y_pred=final_val_stats["predictions"],
         class_names=class_names,
     )
+    final_metrics["top5_accuracy"] = final_val_stats["top5_accuracy"]
 
     # Save best checkpoint
     checkpoint_path = os.path.join(output_dir, f"{model_arch}.pt")
