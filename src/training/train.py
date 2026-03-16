@@ -266,7 +266,7 @@ def train(model, train_loader, val_loader, cfg, device, output_dir, model_arch):
         history["train_top5_acc"].append(train_stats["top5_accuracy"])
         history["val_loss"].append(val_stats["loss"])
         history["val_acc"].append(val_stats["accuracy"])
-        history["train_top5_acc"].append(train_stats["top5_accuracy"])
+        history["val_top5_acc"].append(val_stats["top5_accuracy"])
         history["val_balanced_acc"].append(val_metrics["balanced_accuracy"])
         history["val_precision_macro"].append(val_metrics["precision_macro"])
         history["val_recall_macro"].append(val_metrics["recall_macro"])
