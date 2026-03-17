@@ -31,7 +31,7 @@ class EarlyStopping:
             self.best_state = {}
             for k, v in model.state_dict().items():
                 self.best_state[k] = v.cpu().clone()
-            print(f"New best val acc: {self.best:.4f}. Saving weights")
+            print(f"New best val acc: {self.best:.4f}.")
         else:
             self.counter += 1
         print(f"No improvement ({self.counter}/{self.patience})")

@@ -33,7 +33,7 @@ def main():
         "batch_size": 4,
         "num_workers": 0,
         "warmup_epochs": 3,
-        "num_epochs": 10,
+        "num_epochs": 6,
         "lr_head": 1e-3,
         "lr_backbone": 1e-5,
         "weight_decay": 1e-2,
@@ -57,11 +57,6 @@ def main():
 
     seed_everything(CFG["seed"])
 
-    # Data setup
-    train_loader, val_loader, test_loader = build_dataloaders(DATA_DIR, CFG)
-    ds = HMDBDataset(root=DATA_DIR, num_frames=CFG["num_frames"])
-    class_names = ds.classes
-
     # Model setup
     if args.model == "timesformer":
         model = load_timesformer(num_classes=25, checkpoint=CHECKPOINTS[args.model])
@@ -74,6 +69,11 @@ def main():
                                                                          list)) else image_size)
     else:
         raise ValueError(f"Invalid model: {args.model}")
+
+    # Data setup
+    train_loader, val_loader, test_loader = build_dataloaders(DATA_DIR, CFG)
+    ds = HMDBDataset(root=DATA_DIR, num_frames=CFG["num_frames"])
+    class_names = ds.classes
 
     params = count_parameters(model)
     print(f"\nParameters:")
