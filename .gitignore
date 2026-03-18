@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 .idea/
 HMDB_simp/
+JHMDB/
 .venv/
 *.pt
 *.safetensors

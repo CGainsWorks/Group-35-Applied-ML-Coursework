@@ -181,7 +181,7 @@ def _estimate_batch_flops(model, frames, labels, train=True):
 
 
 # Main Training Function
-def train(model, train_loader, val_loader, cfg, device, output_dir, model_arch):
+def train(model, train_loader, val_loader, test_loader, cfg, device, output_dir, model_arch):
     model = model.to(device)
     os.makedirs(output_dir, exist_ok=True)
     class_names = _extract_class_names(train_loader)
@@ -316,6 +316,18 @@ def train(model, train_loader, val_loader, cfg, device, output_dir, model_arch):
     )
     final_metrics["top5_accuracy"] = final_val_stats["top5_accuracy"]
 
+    final_test_stats = run_epoch(
+        model, test_loader, None, None, cfg["grad_clip"], device,
+        train=False, return_predictions=True
+    )
+    final_test_metrics = compute_classification_metrics(
+        y_true=final_test_stats["labels"],
+        y_pred=final_test_stats["predictions"],
+        class_names=class_names,
+    )
+    final_test_metrics["top5_accuracy"] = final_test_stats["top5_accuracy"]
+
+
     # Save best checkpoint
     checkpoint_path = os.path.join(output_dir, f"{model_arch}.pt")
     torch.save(model.state_dict(), checkpoint_path)
@@ -329,6 +341,18 @@ def train(model, train_loader, val_loader, cfg, device, output_dir, model_arch):
         json.dump(final_metrics["classification_report"], f, indent=2)
     with open(os.path.join(metrics_dir, f"{model_arch}_val_metrics_summary.txt"), "w") as f:
         f.write(format_metrics_summary(final_metrics) + "\n")
+
+    # Test metrics
+    np.save(
+        os.path.join(metrics_dir, f"{model_arch}_test_confusion_matrix.npy"),
+        final_test_metrics["confusion_matrix"]
+    )
+    with open(os.path.join(metrics_dir, f"{model_arch}_test_classification_report.json"), "w") as f:
+        json.dump(final_test_metrics["classification_report"], f, indent=2)
+    with open(os.path.join(metrics_dir, f"{model_arch}_test_metrics_summary.txt"), "w") as f:
+        f.write(format_metrics_summary(final_test_metrics) + "\n")
+
     print(f"Saved classification metrics to: {metrics_dir}")
+    print(f"Test Metrics: {format_metrics_summary(final_test_metrics)}")
 
     return model, dict(history)

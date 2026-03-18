@@ -88,10 +88,10 @@ def main():
         print(f"Loaded checkpoint from {CKPT_PATH}")
     else:
         model, history = train(
-            model, train_loader, val_loader,
+            model, train_loader, val_loader, test_loader,
             cfg=CFG, device=DEVICE, output_dir=OUTPUT_DIR, model_arch=args.model
         )
-        plot_training(history, OUTPUT_DIR, args.model)
+        plot_training(history, OUTPUT_DIR)
 
         print(f"\nTraining history:")
         for k, v in history.items():
