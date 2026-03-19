@@ -5,6 +5,7 @@
 # Run: python main.py --model timesformer
 
 import os
+import json
 import argparse
 import torch
 
@@ -14,6 +15,7 @@ from src.training.train import train
 from src.utils import seed_everything, count_parameters
 from src.model.timesformer import load_timesformer
 from src.model.videomae import load_videomae
+from src.eval.attention import visualise_temporal_attention, visualise_spatial_attention
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -94,6 +96,43 @@ def main():
         print(f"\nTraining history:")
         for k, v in history.items():
             print(f"{k}: {[round(x, 4) for x in v]}")
+
+    # Attention visualisation — TimeSFormer only
+    if args.model == "timesformer":
+        model = model.to(DEVICE)
+        model.eval()
+
+        # Get weakest 3 classes from classification report
+        metrics_path = os.path.join(OUTPUT_DIR, "metrics", f"{args.model}_val_classification_report.json")
+        if os.path.exists(metrics_path):
+            with open(metrics_path) as f:
+                report = json.load(f)
+            class_f1 = {}
+            for k, v in report.items():
+                if isinstance(v, dict) and "f1-score" in v:
+                    class_f1[k] = v["f1-score"]
+            weak_classes = sorted(class_f1, key=class_f1.get)[:3]
+            print(f"\nWeakest classes: {weak_classes}")
+
+        for target_class in weak_classes:
+            if target_class not in class_names:
+                continue
+            class_idx = class_names.index(target_class)
+
+            # Find first test sample with this label
+            for frames, label in test_loader:
+                if label[0].item() == class_idx:
+                    frames = frames[0].unsqueeze(0)  # (1, T, C, H, W)
+                    print(f"\nVisualising attention for: {target_class}")
+                    visualise_spatial_attention(
+                        model, frames, class_names, class_idx,
+                        device=DEVICE, output_dir=OUTPUT_DIR
+                    )
+                    visualise_temporal_attention(
+                        model, frames, class_names, class_idx,
+                        device=DEVICE, output_dir=OUTPUT_DIR
+                    )
+                    break
 
 if __name__ == "__main__":
     main()
