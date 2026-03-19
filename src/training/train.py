@@ -34,7 +34,7 @@ class EarlyStopping:
             print(f"New best val acc: {self.best:.4f}.")
         else:
             self.counter += 1
-        print(f"No improvement ({self.counter}/{self.patience})")
+            print(f"No improvement ({self.counter}/{self.patience})")
 
         return self.counter >= self.patience  # True = stop
 
