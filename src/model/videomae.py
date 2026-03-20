@@ -6,6 +6,7 @@ def load_videomae(num_classes: int,
     model_inst = VideoMAEForVideoClassification.from_pretrained(
         checkpoint,
         num_labels=num_classes,  # define the new head size
-        ignore_mismatched_sizes=True  # allows head to be replaced without error
+        ignore_mismatched_sizes=True,  # allows head to be replaced without error
+        output_attentions=True
     )
     return model_inst

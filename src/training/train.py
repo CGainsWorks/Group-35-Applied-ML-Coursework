@@ -161,16 +161,18 @@ def _extract_class_names(loader):
     return None
 
 
+from thop import profile
+
 def _estimate_batch_flops(model, frames, labels, train=True):
-    # Hugging Face models expose floating_point_ops for a fast FLOPs estimate.
-    if hasattr(model, "floating_point_ops"):
-        try:
-            fwd_flops = float(model.floating_point_ops({"pixel_values": frames}))
-            if fwd_flops > 0:
-                # Training is roughly forward + backward + gradient update math.
-                return fwd_flops * (3.0 if train else 1.0)
-        except Exception:
-            pass
+    try:
+        macs, params = profile(model, inputs=(frames,), verbose=False)
+        fwd_flops = macs * 2
+
+        if fwd_flops > 0:
+            return fwd_flops * (3.0 if train else 1.0)
+    except Exception as e:
+        print(f"Error calculating FLOPs with thop: {e}")
+        pass
     return None
 
 
