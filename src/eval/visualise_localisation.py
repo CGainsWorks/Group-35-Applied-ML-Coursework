@@ -44,57 +44,58 @@ def main():
     ).to(device)
 
     model.load_state_dict(
-    torch.load("outputs/localizer_videomae.pt", map_location=device)
-)
+        torch.load("outputs/localizer_videomae.pt", map_location=device)
+    )
     model.eval()
 
     os.makedirs("outputs/localisation_vis", exist_ok=True)
 
-    for i, batch in enumerate(test_loader):
-        if i >= 3:
+    for sample_idx, batch in enumerate(test_loader):
+        if sample_idx >= 3:
             break
-    frames, gt_boxes, labels, meta = batch
 
-    frames = frames.to(device)
-    gt_boxes = gt_boxes.to(device)
+        frames, gt_boxes, labels, meta = batch
 
-    with torch.no_grad():
-        _, pred_boxes = model(frames)
+        frames = frames.to(device)
+        gt_boxes = gt_boxes.to(device)
 
-    frames = frames[0].cpu()
-    gt_boxes = gt_boxes[0].cpu()
-    pred_boxes = pred_boxes[0].cpu()
+        with torch.no_grad():
+            _, pred_boxes = model(frames)
 
-    imgs = []
-    to_pil = T.ToPILImage()
+        frames = frames[0].cpu()
+        gt_boxes = gt_boxes[0].cpu()
+        pred_boxes = pred_boxes[0].cpu()
 
-    for i in range(frames.shape[0]):
-        img = to_pil(frames[i])
-        img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+        imgs = []
+        to_pil = T.ToPILImage()
 
-        h, w = img.shape[:2]
+        for frame_idx in range(frames.shape[0]):
+            img = to_pil(frames[frame_idx])
+            img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
-        gt = denormalize_box(gt_boxes[i], w, h)
-        pred = denormalize_box(pred_boxes[i], w, h)
+            h, w = img.shape[:2]
 
-        img = draw_box(img, gt, (0, 255, 0), 2)      # green = GT
-        img = draw_box(img, pred, (0, 0, 255), 2)    # red = prediction
+            gt = denormalize_box(gt_boxes[frame_idx], w, h)
+            pred = denormalize_box(pred_boxes[frame_idx], w, h)
 
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        imgs.append(img)
+            img = draw_box(img, gt, (0, 255, 0), 2)
+            img = draw_box(img, pred, (0, 0, 255), 2)
 
-    fig, axes = plt.subplots(1, len(imgs), figsize=(3 * len(imgs), 3))
-    for ax, img in zip(axes, imgs):
-        ax.imshow(img)
-        ax.axis("off")
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            imgs.append(img)
 
-    title = f"{meta['class_name'][0]} | {meta['video_name'][0]}"
-    fig.suptitle(title)
-    plt.tight_layout()
-    plt.savefig(f"outputs/localisation_vis/sample_{i+1}.png")
-    plt.close()
+        fig, axes = plt.subplots(1, len(imgs), figsize=(3 * len(imgs), 3))
+        for ax, img in zip(axes, imgs):
+            ax.imshow(img)
+            ax.axis("off")
 
-    print("Saved visualisation to outputs/localisation_vis/sample.png")
+        title = f"{meta['class_name'][0]} | {meta['video_name'][0]}"
+        fig.suptitle(title)
+        plt.tight_layout()
+        plt.savefig(f"outputs/localisation_vis/sample_{sample_idx+1}.png")
+        plt.close()
+
+        print(f"Saved visualisation to outputs/localisation_vis/sample_{sample_idx+1}.png")
 
 
 if __name__ == "__main__":
