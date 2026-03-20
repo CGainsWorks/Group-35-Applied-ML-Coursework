@@ -50,7 +50,7 @@ def main():
 
     DATA_DIR = "./HMDB_simp"
     OUTPUT_DIR = "./outputs"
-    CKPT_PATH = os.path.join(OUTPUT_DIR, f"{args.model}_best.pt")
+    CKPT_PATH = os.path.join(OUTPUT_DIR, f"{args.model}.pt")
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     print(f"Model: {args.model}")

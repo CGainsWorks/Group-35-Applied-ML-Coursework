@@ -12,6 +12,7 @@ import torch.optim as optim
 import numpy as np
 from collections import defaultdict
 import tqdm
+
 from src.eval.metrics import compute_classification_metrics, format_metrics_summary
 
 # Early Stopping
@@ -43,7 +44,6 @@ class EarlyStopping:
             model.load_state_dict(self.best_state)
             print(f"Restored best weights (val acc {self.best:.4f})")
 
-
 # Fine-tuning Strategy
 def freeze_backbone(model):
     # Freeze all layers except the classification head.
@@ -58,7 +58,6 @@ def freeze_backbone(model):
             trainable += p.numel()
     print(
         f"Backbone frozen\n Trainable params: {trainable:,} (head only)")  # Expect 19,225
-
 
 def unfreeze_all(model, lr_backbone, lr_head, weight_decay):
     for param in model.parameters():
@@ -92,10 +91,27 @@ def unfreeze_all(model, lr_backbone, lr_head, weight_decay):
 
     return optimizer
 
+def build_scheduler(optimizer, scheduler_type: str, total_steps: int, warmup_steps: int):
+    if scheduler_type == "cosine":
+        return optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_steps)
+
+    elif scheduler_type == "step":
+        step_size = max(1, total_steps // 3)
+        return optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=0.1)
+
+    elif scheduler_type == "linear_warmup_cosine":
+        def lr_lambda(current_step: int):
+            if current_step < warmup_steps:
+                return float(current_step) / float(max(1, warmup_steps))
+            progress = float(current_step - warmup_steps) / float(max(1, total_steps - warmup_steps))
+            return max(0.0, 0.5 * (1.0 + np.cos(np.pi * progress)))
+        return optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
+
+    else:
+        raise ValueError
 
 # Single Epoch
-def run_epoch(model, loader, optimizer, scheduler, grad_clip, device,
-    train=True, return_predictions=False):
+def run_epoch(model, loader, optimizer, scheduler, grad_clip, device, train=True, return_predictions=False):
     if train:
         model.train()
     else:
@@ -235,8 +251,13 @@ def train(model, train_loader, val_loader, cfg, device, output_dir, model_arch):
             total_remaining = (cfg["num_epochs"] - cfg["warmup_epochs"]) * len(
                 train_loader)
             # Remaining epochs * number of batches per epoch
-            scheduler = optim.lr_scheduler.CosineAnnealingLR(
-                optimizer, T_max=total_remaining  # steps to decay over
+            scheduler_type = cfg.get("scheduler_type", "cosine")
+            warmup_steps = len(train_loader)
+            scheduler = build_scheduler(
+                optimizer,
+                scheduler_type=scheduler_type,
+                total_steps=total_remaining,
+                warmup_steps=warmup_steps,
             )
             phase = 2
 
