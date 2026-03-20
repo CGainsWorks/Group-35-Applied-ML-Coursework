@@ -49,6 +49,31 @@ def evaluate_localizer(model, loader, device):
             total_frames += ious.numel()
 
     return total_iou / total_frames
+def detection_accuracy(model, loader, device, threshold=0.5):
+    model.eval()
+    correct = 0
+    total = 0
+
+    with torch.no_grad():
+        for frames, boxes, labels, _ in loader:
+            frames = frames.to(device)
+            boxes = boxes.to(device)
+            labels = labels.to(device)
+
+            class_logits, preds = model(frames)
+
+            pred_labels = class_logits.argmax(dim=1)   # [B]
+            ious = box_iou(preds, boxes)               # [B, T]
+
+            # class must be correct for the whole clip
+            class_correct = pred_labels.eq(labels).unsqueeze(1).expand_as(ious)
+
+            detections = (ious >= threshold) & class_correct
+
+            correct += detections.sum().item()
+            total += detections.numel()
+
+    return correct / total
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -83,41 +108,20 @@ def main():
     for epoch in range(5):
         loss = train_localizer(model, train_loader, optimizer, device)
         test_iou = evaluate_localizer(model, test_loader, device)
-        print(f"Epoch {epoch+1}: Loss = {loss:.4f} | Test IoU = {test_iou:.4f}")
+        det_acc = detection_accuracy(model, test_loader, device, threshold=0.5)
+
+        print(
+            f"Epoch {epoch+1}: "
+            f"Loss = {loss:.4f} | "
+            f"Test IoU = {test_iou:.4f} | "
+            f"Det Acc@0.5 = {det_acc:.4f}"
+        )
 
     os.makedirs("outputs", exist_ok=True)
     torch.save(model.state_dict(), "outputs/localizer_videomae.pt")
     print("Saved trained localizer to outputs/localizer_videomae.pt")
 
     print("Done!")
-
-    root = "./JHMDB"
-
-    model = VideoMAELocalizer(
-    checkpoint="MCG-NJU/videomae-base-finetuned-kinetics",
-    num_classes=21,
-    num_frames=None
-).to(device)
-
-    # Match dataloader config to the pretrained VideoMAE backbone
-    cfg["num_frames"] = int(model.backbone.config.num_frames)
-    image_size = model.backbone.config.image_size
-    cfg["resolution"] = int(image_size[0] if isinstance(image_size, (tuple, list)) else image_size)
-
-    train_loader, test_loader = build_jhmdb_dataloaders(root, cfg)
-
-    optimizer = optim.Adam(model.parameters(), lr=1e-4)
-
-    print("Starting training...")
-    print(f"Using num_frames={cfg['num_frames']}, resolution={cfg['resolution']}")
-
-    for epoch in range(5):
-        loss = train_localizer(model, train_loader, optimizer, device)
-        test_iou = evaluate_localizer(model, test_loader, device)
-        print(f"Epoch {epoch+1}: Loss = {loss:.4f} | Test IoU = {test_iou:.4f}")
-
-    print("Done!")
-
 
 if __name__ == "__main__":
     main()
