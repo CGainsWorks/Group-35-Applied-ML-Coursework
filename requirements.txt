@@ -16,3 +16,4 @@ seaborn
 numpy
 tqdm
 pyyaml
+thop
