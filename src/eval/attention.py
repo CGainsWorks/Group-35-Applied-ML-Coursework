@@ -100,8 +100,8 @@ def attention_on_frame(frame_tensor, attn_map, alpha=0.5):
     blended = (1 - alpha) * frame_np + alpha * heatmap
     return np.clip(blended, 0, 1)
 
-def visualise_spatial_attention(model,frames, class_names, class_idx,device,
-                                output_dir, num_layers=4):
+def visualise_spatial_attention(model,frames, class_names, class_idx, device,
+                                output_dir, num_layers=4, model_name="timesformer"):
     attentions = extract_attentions(model, frames, device)
     num_frames = frames.shape[1]
 
@@ -131,13 +131,13 @@ def visualise_spatial_attention(model,frames, class_names, class_idx,device,
     plt.tight_layout()
 
     os.makedirs(output_dir, exist_ok=True)
-    path = os.path.join(output_dir, f"spatial_attention_{label_name}.png")
+    path = os.path.join(output_dir, f"{model_name}_spatial_attention_{label_name}.png")
     plt.savefig(path, dpi=150)
     plt.show()
     print(f"Saved spatial attention: {path}")
 
 def visualise_temporal_attention(model, frames, class_names, class_idx,
-                                 device, output_dir, layer_idx=-1):
+                                 device, output_dir, layer_idx=-1, model_name="timesformer"):
     attentions = extract_attentions(model, frames, device)
     num_frames = frames.shape[1]
     layer_idx = layer_idx % len(attentions) # handle negative index
@@ -172,7 +172,7 @@ def visualise_temporal_attention(model, frames, class_names, class_idx,
     plt.tight_layout()
 
     os.makedirs(output_dir, exist_ok=True)
-    path = os.path.join(output_dir, f"temporal_attention_{label_name}.png")
+    path = os.path.join(output_dir, f"{model_name}_temporal_attention_{label_name}.png")
     plt.savefig(path, dpi=150)
     plt.show()
     print(f"Saved temporal attention: {path}")
