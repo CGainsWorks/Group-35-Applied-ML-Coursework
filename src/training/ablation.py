@@ -87,11 +87,11 @@ def run_ablation(label, cfg, device, data_dir, output_dir):
     if cfg["num_frames"] != pretrained_num_frames:
         config = VideoMAEConfig.from_pretrained(CHECKPOINT)
         config.num_frames = cfg["num_frames"]
+        config.num_labels = NUM_CLASSES
         model = VideoMAEForVideoClassification.from_pretrained(
             CHECKPOINT,
-            config=config,
-            num_labels=NUM_CLASSES,
             ignore_mismatched_sizes=True,  # head + positional embeddings may differ
+            config=config,
         )
     else:
         # num_frames matches pretrained default — use Ben's loader as-is
@@ -149,59 +149,3 @@ def run_ablation(label, cfg, device, data_dir, output_dir):
     print(f"\nRun summary saved: {summary_path}")
 
     return summary
-
-def main():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Device: {device}")
-
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-    all_summaries = {}
-
-    for study_name in ABLATIONS.keys():
-        print(f"\nSTUDY: {study_name}")
-
-        study_summaries = []
-        for label, overrides in ABLATIONS[study_name]:
-            # Build this run's config: start from base, apply overrides
-            cfg = copy.deepcopy(BASE_CFG)
-            cfg.update(overrides)
-
-            summary = run_ablation(
-                label=label,
-                cfg=cfg,
-                device=device,
-                data_dir=DATA_DIR,
-                output_dir=os.path.join(OUTPUT_DIR, study_name),
-            )
-            study_summaries.append(summary)
-
-        all_summaries[study_name] = study_summaries
-
-        # Print a compact results table for this study
-        print(f"\n{study_name} ablation results")
-        for s in study_summaries:
-            if s["mean_epoch_gflops"] is not None:
-                gflops = f"{s['mean_epoch_gflops']:.2f}"
-            else:
-                gflops = "N/A"
-            print(
-                f"label={s['label']} "
-                f"num of frames={s['num_frames']} "
-                f"scheduler={s['scheduler_type']} "
-                f"horizontal_flip={s['horizontal_flip']} "
-                f"colour_jitter={s['colour_jitter']} "
-                f"random_crop={s['random_crop']} "
-                f"reversed={s['reversed']} "
-                f"val_acc={s['best_val_acc']} "
-                f"val_f1={s['best_val_f1']} "
-                f"gflops={gflops}"
-            )
-
-    results_path = os.path.join(OUTPUT_DIR, "ablation_results.json")
-    with open(results_path, "w") as f:
-        json.dump(all_summaries, f, indent=2)
-    print(f"\nAblation results saved: {results_path}")
-
-if __name__ == "__main__":
-    main()
