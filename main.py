@@ -43,6 +43,10 @@ def main():
         "weight_decay": 1e-2,
         "grad_clip": 1.0,
         "early_stop_patience": 4,
+        "horizontal_flip": False,
+        "colour_jitter": False,
+        "random_crop": False,
+        "reversed": False,
     }
 
     CHECKPOINTS = {

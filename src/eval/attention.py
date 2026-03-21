@@ -140,7 +140,7 @@ def visualise_temporal_attention(model, frames, class_names, class_idx,
                                  device, output_dir, layer_idx=-1, model_name="timesformer"):
     attentions = extract_attentions(model, frames, device)
     num_frames = frames.shape[1]
-    layer_idx = layer_idx % len(attentions) # handle negative index
+    layer_idx = layer_idx % len(attentions)  # handle negative index
 
     temporal_weights = get_temporal_attention(attentions, layer_idx, num_frames)
 
