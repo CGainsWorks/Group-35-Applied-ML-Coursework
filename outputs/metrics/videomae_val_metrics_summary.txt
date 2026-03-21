@@ -1,1 +1,1 @@
-Acc: 0.9521 | Bal Acc: 0.9529 | P/R/F1 macro: 0.9524/0.9529/0.9509 | F1 weighted: 0.9506
+Top1: 0.9521 | Top5: 1.0000 | Bal Acc: 0.9529 | P/R/F1 macro: 0.9524/0.9529/0.9509 | F1 weighted: 0.9506

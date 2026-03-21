@@ -58,8 +58,11 @@ def compute_classification_metrics(y_true, y_pred, class_names=None):
 
 def format_metrics_summary(metrics: dict) -> str:
     return (
-        f"Acc: {metrics['accuracy']:.4f} | "
+        f"Top1: {metrics['accuracy']:.4f} | "
+        f"Top5: {metrics['top5_accuracy']:.4f} | "
         f"Bal Acc: {metrics['balanced_accuracy']:.4f} | "
-        f"P/R/F1 macro: {metrics['precision_macro']:.4f}/{metrics['recall_macro']:.4f}/{metrics['f1_macro']:.4f} | "
+        f"P/R/F1 macro: {metrics['precision_macro']:.4f}/"
+        f"{metrics['recall_macro']:.4f}/"
+        f"{metrics['f1_macro']:.4f} | "
         f"F1 weighted: {metrics['f1_weighted']:.4f}"
     )

@@ -15,12 +15,22 @@ from src.utils import seed_everything, count_parameters
 from src.model.timesformer import load_timesformer
 from src.model.videomae import load_videomae
 from src.eval.plots import plot_training
+import random
+import numpy as np
+import torch
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model",     type=str, required=True, choices=["timesformer", "videomae"])
     parser.add_argument("--eval-only", action="store_true")
+    parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
 
 def main():
     args = parse_args()
@@ -30,7 +40,7 @@ def main():
         "resolution": 224,
         "train_ratio": 0.70,
         "val_ratio": 0.15,
-        "seed": 42,
+        "seed": args.seed,
         "batch_size": 4,
         "num_workers": 0,
         "warmup_epochs": 3,

@@ -260,6 +260,7 @@ def train(model, train_loader, val_loader, test_loader, cfg, device, output_dir,
             y_pred=val_stats["predictions"],
             class_names=class_names,
         )
+        val_metrics["top5_accuracy"] = val_stats["top5_accuracy"]
 
         history["train_loss"].append(train_stats["loss"])
         history["train_acc"].append(train_stats["accuracy"])

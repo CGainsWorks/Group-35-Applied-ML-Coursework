@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from src.data.jhmdb_dataloader import build_jhmdb_dataloaders
 from src.model.localizer import VideoMAELocalizer
-
+from src.data.jhmdb_dataset import JHMDBDataset
 
 def draw_box(img, box, color, thickness=2):
     x1, y1, x2, y2 = [int(v) for v in box]
@@ -14,6 +14,13 @@ def draw_box(img, box, color, thickness=2):
     cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness)
     return img
 
+def get_class_color(class_idx):
+    colors = [
+        (255, 0, 0), (0, 255, 0), (0, 0, 255),
+        (255, 255, 0), (255, 0, 255), (0, 255, 255),
+        (128, 0, 0), (0, 128, 0), (0, 0, 128),
+    ]
+    return colors[class_idx % len(colors)]
 
 def denormalize_box(box, width, height):
     box = box.clone()
@@ -36,6 +43,8 @@ def main():
     root = "./JHMDB"
 
     _, test_loader = build_jhmdb_dataloaders(root, cfg)
+    dataset = JHMDBDataset(root=root, split="test", split_id=1, num_frames=16)
+    class_names = dataset.classes
 
     model = VideoMAELocalizer(
         checkpoint="MCG-NJU/videomae-base-finetuned-kinetics",
@@ -60,7 +69,9 @@ def main():
         gt_boxes = gt_boxes.to(device)
 
         with torch.no_grad():
-            _, pred_boxes = model(frames)
+            class_logits, pred_boxes = model(frames)
+            pred_label = class_logits.argmax(dim=1)[0].item()
+            gt_label = labels[0].item()
 
         frames = frames[0].cpu()
         gt_boxes = gt_boxes[0].cpu()
@@ -78,8 +89,10 @@ def main():
             gt = denormalize_box(gt_boxes[frame_idx], w, h)
             pred = denormalize_box(pred_boxes[frame_idx], w, h)
 
+            pred_color = get_class_color(pred_label)
             img = draw_box(img, gt, (0, 255, 0), 2)
-            img = draw_box(img, pred, (0, 0, 255), 2)
+            pred_color = get_class_color(pred_label)
+            img = draw_box(img, pred, pred_color, 2)
 
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             imgs.append(img)
@@ -89,7 +102,10 @@ def main():
             ax.imshow(img)
             ax.axis("off")
 
-        title = f"{meta['class_name'][0]} | {meta['video_name'][0]}"
+        gt_name = class_names[gt_label]
+        pred_name = class_names[pred_label]
+
+        title = f"GT: {gt_name} | Pred: {pred_name}"
         fig.suptitle(title)
         plt.tight_layout()
         plt.savefig(f"outputs/localisation_vis/sample_{sample_idx+1}.png")
