@@ -10,15 +10,49 @@ from torch.utils.data import DataLoader, Subset
 from sklearn.model_selection import StratifiedShuffleSplit
 
 from src.data.dataset import HMDBDataset
-import torchvision.transforms as T
+import torchvision.transforms.v2 as v2
 
-def get_transforms(resolution=224):
-    return T.Compose([
-        T.Resize((resolution, resolution)),
-        T.ToTensor(),
-        T.Normalize(mean=[0.485, 0.456, 0.406], # Mean pixel values for RGB channels
-                    std=[0.229, 0.224, 0.225]), # Std for RGB channels
-    ])
+def get_transforms(resolution=224, horizontal_flip=False, colour_jitter=False, reversed_prob=False, random_crop=False):
+    reversed_prob = 0.5 if reversed_prob else 0.0
+
+    transforms: list[v2.Transform] = [v2.ToImage()]
+
+    # Random resize crop
+    if random_crop:
+        transforms.append(v2.RandomResizedCrop(
+            size=(resolution, resolution),
+            scale=(0.5, 1.0),
+            ratio=(0.75, 1.333),
+            interpolation=v2.InterpolationMode.BICUBIC,
+            # Bicubic is often preferred for VideoMAE
+            antialias=True
+        ))
+
+    # Temporal Reversing
+    if reversed_prob > 0:
+        transforms.append(
+            v2.RandomApply([v2.Lambda(lambda x: torch.flip(x, dims=[0]))],
+                           p=reversed_prob))
+
+    # Spatial Resize
+    transforms.append(v2.Resize((resolution, resolution), antialias=True))
+
+    # Horizontal Flip
+    if horizontal_flip:
+        transforms.append(v2.RandomHorizontalFlip(p=0.5))
+
+    # Colour Jitter
+    if colour_jitter:
+        transforms.append(
+            v2.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4,
+                           hue=0.1))
+
+    # Final conversion and normalise
+    transforms.append(v2.ToDtype(torch.float32, scale=True))
+    transforms.append(
+        v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]))
+
+    return v2.Compose(transforms)
 
 def build_splits(dataset, train_ratio=0.70, val_ratio=0.15, seed=42):
     # Extract all labels from the dataset, needed for stratified splitting
@@ -51,7 +85,7 @@ def build_dataloaders(root, cfg):
     dataset = HMDBDataset(
         root=root,
         num_frames=cfg["num_frames"],
-        transform=get_transforms(cfg["resolution"])
+        transform=get_transforms(cfg["resolution"], cfg["horizontal_flip"], cfg["colour_jitter"], cfg["reversed"], cfg["random_crop"])
     )
 
     # Get split indices from the train dataset (all three share same sample ordering)
@@ -90,30 +124,3 @@ def build_dataloaders(root, cfg):
     )
 
     return train_loader, val_loader, test_loader
-
-# Sanity check
-if __name__ == "__main__":
-    import sys
-
-    root = sys.argv[1] if len(sys.argv) > 1 else "./HMDB_simp"
-
-    cfg = {
-        "num_frames": 8,
-        "resolution": 224,
-        "train_ratio": 0.70,
-        "val_ratio": 0.15,
-        "seed": 42,
-        "batch_size": 4,
-        "num_workers": 0
-    }
-
-    train_loader, val_loader, test_loader = build_dataloaders(root, cfg)
-
-    print(f"\nBatches\n Train: {len(train_loader)} | Val: {len(val_loader)} | Test: {len(test_loader)}")
-
-    # Pull one batch and check shapes
-    frames, labels = next(iter(train_loader))
-    print(f"\nTrain batch:")
-    print(f"Frames shape: {frames.shape}") # expect torch.Size([4, 8, 3, 224, 224])
-    print(f"Labels shape: {labels.shape}") # expect torch.Size([4])
-    print(f"Labels: {labels.tolist()}")

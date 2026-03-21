@@ -35,7 +35,11 @@ BASE_CFG = {
     "weight_decay": 1e-2,
     "grad_clip": 1.0,
     "early_stop_patience": 4,
-    "scheduler_type": "cosine"
+    "scheduler_type": "cosine",
+    "horizontal_flip": False,
+    "colour_jitter": False,
+    "random_crop": False,
+    "reversed": False,
 }
 
 CHECKPOINT = "MCG-NJU/videomae-base-finetuned-kinetics"
@@ -56,14 +60,26 @@ ABLATIONS = {
     "scheduler": [
         ("sched_cosine", {"scheduler_type": "cosine"}),
         ("sched_step", {"scheduler_type": "step"}),
-        ("sched_linear_warmup_cosine",{"scheduler_type": "linear_warmup_cosine"}),
+        ("sched_linear_warmup_cosine", {"scheduler_type": "linear_warmup_cosine"}),
     ],
+    # Study 3: data augmentation
+    "augmentation": [
+        ("aug_flip", {"horizontal_flip": True}),
+        ("aug_jitter", {"colour_jitter": True}),
+        ("aug_crop", {"random_crop": True}),
+        ("aug_reversed", {"reversed": True}),
+    ]
 }
 
 # Single ablation run
 def run_ablation(label, cfg, device, data_dir, output_dir):
     print(f"Ablation run: {label}")
-    print(f"num_frames={cfg['num_frames']}, scheduler={cfg['scheduler_type']}")
+    print(f"num_frames={cfg['num_frames']}")
+    print(f"scheduler={cfg['scheduler_type']}")
+    print(f"horizontal_flip={cfg['horizontal_flip']}")
+    print(f"colour_jitter={cfg['colour_jitter']}")
+    print(f"random_crop={cfg['random_crop']}")
+    print(f"reversed={cfg['reversed']}")
 
     seed_everything(cfg["seed"])
 
@@ -116,11 +132,14 @@ def run_ablation(label, cfg, device, data_dir, output_dir):
         "label": label,
         "num_frames": cfg["num_frames"],
         "scheduler_type": cfg["scheduler_type"],
+        "horizontal_flip": cfg["horizontal_flip"],
+        "colour_jitter": cfg["colour_jitter"],
+        "random_crop": cfg["random_crop"],
+        "reversed": cfg["reversed"],
         "best_val_acc": round(best_val_acc, 4),
         "best_val_f1": round(best_val_f1, 4),
         "epochs_run": len(history["val_acc"]),
         "mean_epoch_gflops": round(mean_flops / 1e9, 2) if mean_flops is not None else None,
-
     }
 
     # Save this run's summary alongside its checkpoint
@@ -170,6 +189,10 @@ def main():
                 f"label={s['label']} "
                 f"num of frames={s['num_frames']} "
                 f"scheduler={s['scheduler_type']} "
+                f"horizontal_flip={s['horizontal_flip']} "
+                f"colour_jitter={s['colour_jitter']} "
+                f"random_crop={s['random_crop']} "
+                f"reversed={s['reversed']} "
                 f"val_acc={s['best_val_acc']} "
                 f"val_f1={s['best_val_f1']} "
                 f"gflops={gflops}"

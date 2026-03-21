@@ -11,6 +11,8 @@ from PIL import Image # opening, manipulating image files
 import torch
 from torch.utils.data import Dataset
 import torchvision.transforms as T
+from torchvision.transforms import v2
+
 
 class HMDBDataset(Dataset):
     def __init__(self, root: str, num_frames: int = 8, transform=None):
@@ -75,49 +77,17 @@ class HMDBDataset(Dataset):
 
     def __getitem__(self, i):
         sample_dir, label = self.samples[i]
-        pil_frames = self._load_frames(sample_dir)
+        pil_frames = self._load_frames(sample_dir)  # List of PIL images
 
-        # Apply transform to each frame, then stack into (T, C, H, W)
-        # If torchvision.models.video is used this then stack (C, T, H, W)
+        # Convert list of PIL images to a 4D Tensor (T, C, H, W)
+        # transforms.v2 is used now to support video properly
+        frames = torch.stack([v2.functional.to_image(f) for f in pil_frames])
+
+        # Apply the transform to the entire block at once
         if self.transform:
-            transformed = []
-            for f in pil_frames:
-                transformed.append(self.transform(f))
-            frames = torch.stack(transformed)
+            frames = self.transform(frames)
         else:
-            # Fallback: tensor without normalisation
-            to_tensor = T.ToTensor()
-            converted = []
-            for f in pil_frames:
-                converted.append(to_tensor(f))
-            frames = torch.stack(converted)
+            # Simple fallback to float32 [0, 1]
+            frames = v2.functional.to_dtype(frames, torch.float32, scale=True)
 
-        # frames: (T, C, H, W)
         return frames, label
-
-# Quick sanity check
-if __name__ == "__main__":
-    import sys
-
-    root = sys.argv[1] if len(sys.argv) > 1 else "./HMDB_simp"
-
-    transform = T.Compose([
-        T.Resize((224, 224)),
-        T.ToTensor(),
-        T.Normalize(mean=[0.485, 0.456, 0.406],
-                    std=[0.229, 0.224, 0.225]),
-    ])
-
-    dataset = HMDBDataset(root=root, num_frames=8, transform=transform)
-
-    print(f"\nClasses: {dataset.classes}")
-    print(f"Total samples: {len(dataset)}")
-
-    # Load one sample and check shape
-    frames, label = dataset[0]
-    print(f"\nSanity check:")
-    print(f"\nSample 0:")
-    print(f"Frames shape : {frames.shape}") # expect torch.Size([8, 3, 224, 224])
-    print(f"Frames dtype : {frames.dtype}") # expect torch.float32
-    print(f"Label        : {label} ({dataset.classes[label]})")
-    print(f"Frames min/max: {frames.min():.3f} / {frames.max():.3f}") # expect ~-2.1 / ~2.
