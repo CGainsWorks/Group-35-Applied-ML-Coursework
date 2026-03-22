@@ -1,0 +1,13 @@
+{
+  "label": "sched_linear_warmup_cosine",
+  "num_frames": 16,
+  "scheduler_type": "linear_warmup_cosine",
+  "horizontal_flip": false,
+  "colour_jitter": false,
+  "random_crop": false,
+  "reversed": false,
+  "best_val_acc": 0.9734,
+  "best_val_f1": 0.971,
+  "epochs_run": 10,
+  "mean_epoch_gflops": 572388.41
+}
