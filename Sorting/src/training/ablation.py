@@ -19,57 +19,10 @@ from src.model.videomae import load_videomae
 from src.training.train import train
 from src.utils import seed_everything, count_parameters
 
-# Baseline config: Should look to create a config.py
-BASE_CFG = {
-    "num_frames": 16,
-    "resolution": 224,
-    "train_ratio": 0.70,
-    "val_ratio": 0.15,
-    "seed": 42,
-    "batch_size": 4,
-    "num_workers": 0,
-    "warmup_epochs": 3,
-    "num_epochs": 10,
-    "lr_head": 1e-3,
-    "lr_backbone": 1e-5,
-    "weight_decay": 1e-2,
-    "grad_clip": 1.0,
-    "early_stop_patience": 4,
-    "scheduler_type": "cosine",
-    "horizontal_flip": False,
-    "colour_jitter": False,
-    "random_crop": False,
-    "reversed": False,
-}
-
 CHECKPOINT = "MCG-NJU/videomae-base-finetuned-kinetics"
 NUM_CLASSES = 25
 DATA_DIR    = "./HMDB_simp"
 OUTPUT_DIR  = "./outputs/ablation"
-
-# Ablation definitions
-ABLATIONS = {
-    # Study 1: Number of input frames
-    "frames": [
-        ("frames_04", {"num_frames": 4}),
-        ("frames_08", {"num_frames": 8}),
-        ("frames_16", {"num_frames": 16}),
-        ("frames_32", {"num_frames": 32}),
-    ],
-    # Study 2: learning rate schedule
-    "scheduler": [
-        ("sched_cosine", {"scheduler_type": "cosine"}),
-        ("sched_step", {"scheduler_type": "step"}),
-        ("sched_linear_warmup_cosine", {"scheduler_type": "linear_warmup_cosine"}),
-    ],
-    # Study 3: data augmentation
-    "augmentation": [
-        ("aug_flip", {"horizontal_flip": True}),
-        ("aug_jitter", {"colour_jitter": True}),
-        ("aug_crop", {"random_crop": True}),
-        ("aug_reversed", {"reversed": True}),
-    ]
-}
 
 # Single ablation run
 def run_ablation(label, cfg, device, data_dir, output_dir):

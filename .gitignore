@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.idea/
+HMDB_simp/
+.venv/
+*.txt
+HMDB_simp.zip
+outputs/videomae.pt
+outputs/timesformer.pt
+*.pt
