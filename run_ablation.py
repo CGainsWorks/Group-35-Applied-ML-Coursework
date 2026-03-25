@@ -35,7 +35,24 @@ OUTPUT_DIR  = "./outputs/ablation"
 
 # Ablation definitions
 ABLATIONS = {
+    # Study 1: Number of input frames
+    "frames": [
+        ("frames_04", {"num_frames": 4}),
+        ("frames_08", {"num_frames": 8}),
+        ("frames_16", {"num_frames": 16}),
+        ("frames_32", {"num_frames": 32}),
+    ],
+    # Study 2: learning rate schedule
+    "scheduler": [
+        ("sched_cosine", {"scheduler_type": "cosine"}),
+        ("sched_step", {"scheduler_type": "step"}),
+        ("sched_linear_warmup_cosine", {"scheduler_type": "linear_warmup_cosine"}),
+    ],
+    # Study 3: data augmentation
     "augmentation": [
+        ("aug_flip", {"horizontal_flip": True}),
+        ("aug_jitter", {"colour_jitter": True}),
+        ("aug_crop", {"random_crop": True}),
         ("aug_reversed", {"reversed": True}),
     ]
 }
