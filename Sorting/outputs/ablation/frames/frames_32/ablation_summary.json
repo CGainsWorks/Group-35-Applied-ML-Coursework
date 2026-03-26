@@ -1,0 +1,13 @@
+{
+  "label": "frames_32",
+  "num_frames": 32,
+  "scheduler_type": "cosine",
+  "horizontal_flip": false,
+  "colour_jitter": false,
+  "random_crop": false,
+  "reversed": false,
+  "best_val_acc": 0.9468,
+  "best_val_f1": 0.9456,
+  "epochs_run": 9,
+  "mean_epoch_gflops": 1144776.69
+}

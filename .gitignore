@@ -7,3 +7,4 @@ HMDB_simp/
 HMDB_simp.zip
 outputs/videomae.pt
 outputs/timesformer.pt
+*.pt
