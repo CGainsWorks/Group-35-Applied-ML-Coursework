@@ -1,0 +1,15 @@
+Frame-level mAP@0.5 = 0.1291
+
+Top 5 classes:
+shoot_bow: 0.3144
+brush_hair: 0.2744
+pullup: 0.2591
+wave: 0.2575
+throw: 0.2112
+
+Bottom 5 classes:
+push: 0.0511
+climb_stairs: 0.0348
+kick_ball: 0.0249
+pick: 0.0191
+shoot_ball: 0.0135

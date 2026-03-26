@@ -9,7 +9,7 @@ args = parser.parse_args()
 model = args.model
 
 input_path = f"outputs/metrics/{model}_val_classification_report.json"
-output_path = f"outputs/{model}_per_class_metrics.csv"
+output_path = f"outputs/C1_{model}_per_class_metrics.csv"
 
 with open(input_path, "r") as f:
     report = json.load(f)

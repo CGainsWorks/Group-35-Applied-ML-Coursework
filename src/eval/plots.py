@@ -1,7 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 
-def plot_training(history, output_dir="outputs"):
+def plot_training(history, output_dir="outputs", model_name="model"):
     os.makedirs(output_dir, exist_ok=True)
 
     epochs = range(1, len(history["train_loss"]) + 1)
@@ -12,8 +12,8 @@ def plot_training(history, output_dir="outputs"):
     plt.legend()
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
-    plt.title("Training vs Validation Loss")
-    plt.savefig(os.path.join(output_dir, "timesformer_loss_curve.png"))
+    plt.title(f"C1 {model_name.upper()} Training and Validation Loss Curve")
+    plt.savefig(os.path.join(output_dir, f"C1_{model_name}_loss_curve.png"))
     plt.close()
 
     plt.figure()
@@ -22,6 +22,6 @@ def plot_training(history, output_dir="outputs"):
     plt.legend()
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy")
-    plt.title("Training vs Validation Accuracy")
-    plt.savefig(os.path.join(output_dir, "timesformer_accuracy_curve.png"))
+    plt.title(f"C1 {model_name.upper()} Training and Validation Accuracy Curve")
+    plt.savefig(os.path.join(output_dir, f"C1_{model_name}_accuracy_curve.png"))
     plt.close()

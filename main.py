@@ -101,7 +101,7 @@ def main():
             model, train_loader, val_loader, test_loader,
             cfg=CFG, device=DEVICE, output_dir=OUTPUT_DIR, model_arch=args.model
         )
-        plot_training(history, OUTPUT_DIR)
+        plot_training(history, OUTPUT_DIR, args.model)
 
         print(f"\nTraining history:")
         for k, v in history.items():

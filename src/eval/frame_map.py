@@ -1,7 +1,8 @@
 import numpy as np
 import torch
+import os
+import csv
 from sklearn.metrics import average_precision_score
-
 from src.data.jhmdb_dataloader import build_jhmdb_dataloaders
 from src.model.localizer import VideoMAELocalizer
 from src.eval.iou import box_iou
@@ -35,10 +36,6 @@ def compute_frame_map(model, loader, device, num_classes, iou_threshold=0.5):
                         # confidence score for class c
                         score = probs[b, c].item()
 
-                        # positive only if:
-                        # - class c is the true class
-                        # - predicted class is correct
-                        # - IoU threshold met
                         is_tp = int(
                             c == true_class and
                             pred_labels[b].item() == true_class and
@@ -113,6 +110,33 @@ def main():
     print("\nBottom 5 classes:")
     for name, ap in items[-5:]:
         print(f"{name}: {ap:.4f}")
+
+    os.makedirs("outputs", exist_ok=True)
+
+# Save summary
+    with open("outputs/C2_frame_map_results.txt", "w") as f:
+        f.write(f"Frame-level mAP@0.5 = {frame_map:.4f}\n\n")
+
+        f.write("Top 5 classes:\n")
+        for name, ap in items[:5]:
+            f.write(f"{name}: {ap:.4f}\n")
+
+        f.write("\nBottom 5 classes:\n")
+        for name, ap in items[-5:]:
+            f.write(f"{name}: {ap:.4f}\n")
+    os.makedirs("outputs", exist_ok=True)
+
+    # Save summary
+    with open("outputs/C2_frame_map_results.txt", "w") as f:
+        f.write(f"Frame-level mAP@0.5 = {frame_map:.4f}\n\n")
+
+        f.write("Top 5 classes:\n")
+        for name, ap in items[:5]:
+            f.write(f"{name}: {ap:.4f}\n")
+
+        f.write("\nBottom 5 classes:\n")
+        for name, ap in items[-5:]:
+            f.write(f"{name}: {ap:.4f}\n")
 
 if __name__ == "__main__":
     main()

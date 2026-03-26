@@ -1,0 +1,7 @@
+Video-level mAP@0.5 = 0.1250
+
+Top 5 video-AP classes:
+brush_hair: 0.1250
+
+Bottom 5 video-AP classes:
+brush_hair: 0.1250
