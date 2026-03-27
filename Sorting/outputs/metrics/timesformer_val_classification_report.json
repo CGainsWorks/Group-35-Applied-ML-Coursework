@@ -6,9 +6,9 @@
     "support": 8.0
   },
   "cartwheel": {
-    "precision": 0.8571428571428571,
+    "precision": 0.75,
     "recall": 0.75,
-    "f1-score": 0.8,
+    "f1-score": 0.75,
     "support": 8.0
   },
   "catch": {
@@ -18,9 +18,9 @@
     "support": 8.0
   },
   "chew": {
-    "precision": 0.875,
-    "recall": 1.0,
-    "f1-score": 0.9333333333333333,
+    "precision": 1.0,
+    "recall": 0.8571428571428571,
+    "f1-score": 0.9230769230769231,
     "support": 7.0
   },
   "climb": {
@@ -73,14 +73,14 @@
   },
   "kiss": {
     "precision": 1.0,
-    "recall": 1.0,
-    "f1-score": 1.0,
+    "recall": 0.875,
+    "f1-score": 0.9333333333333333,
     "support": 8.0
   },
   "pick": {
-    "precision": 0.7777777777777778,
+    "precision": 0.6363636363636364,
     "recall": 0.875,
-    "f1-score": 0.8235294117647058,
+    "f1-score": 0.7368421052631579,
     "support": 8.0
   },
   "pour": {
@@ -114,9 +114,9 @@
     "support": 7.0
   },
   "shoot_gun": {
-    "precision": 0.7777777777777778,
+    "precision": 0.875,
     "recall": 1.0,
-    "f1-score": 0.875,
+    "f1-score": 0.9333333333333333,
     "support": 7.0
   },
   "situp": {
@@ -144,22 +144,22 @@
     "support": 8.0
   },
   "wave": {
-    "precision": 1.0,
+    "precision": 0.8,
     "recall": 0.5714285714285714,
-    "f1-score": 0.7272727272727273,
+    "f1-score": 0.6666666666666666,
     "support": 7.0
   },
-  "accuracy": 0.9308510638297872,
+  "accuracy": 0.9202127659574468,
   "macro avg": {
-    "precision": 0.9380158730158729,
-    "recall": 0.9321428571428573,
-    "f1-score": 0.92951538657421,
+    "precision": 0.9289624819624821,
+    "recall": 0.9214285714285715,
+    "f1-score": 0.9208800621463162,
     "support": 188.0
   },
   "weighted avg": {
-    "precision": 0.9384181864235055,
-    "recall": 0.9308510638297872,
-    "f1-score": 0.929269828002619,
+    "precision": 0.9286687160357374,
+    "recall": 0.9202127659574468,
+    "f1-score": 0.9201499570023547,
     "support": 188.0
   }
 }
