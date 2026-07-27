@@ -8,3 +8,8 @@ HMDB_simp.zip
 outputs/videomae.pt
 outputs/timesformer.pt
 *.pt
+
+# Large pipeline output archives - keep out of Git
+*.7z
+*.7z.*
+*.zip
